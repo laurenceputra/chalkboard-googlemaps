@@ -1,0 +1,128 @@
+<!DOCTYPE html>  
+<html>
+	<head>
+  		<title>Using Chalkboard with Google Maps</title>
+		
+		<style>
+		body, html {
+			margin: 0;
+			padding: 0;
+			height: 100%;
+		}
+		.map-container {
+			margin: auto;
+			height: 100%;
+		}
+		#map {
+			width: auto;
+			height: 100%;
+			text-align: left;
+		}
+		</style>
+		
+		<!-- jQuery -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+		
+		<!-- Google Maps Javascript API -->
+		<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
+		
+		<!-- Chalkboard code sample -->
+		<script>
+		$( document ).ready( function() {
+			// Initialize Google Maps
+		  	var mapOptions = {
+		    	zoom: 16,
+		    	mapTypeId: google.maps.MapTypeId.ROADMAP
+		  	};
+		  	var map = new google.maps.Map( document.getElementById( "map" ), mapOptions );
+			
+		  	// Setup handlers
+			if ( navigator.geolocation ) {
+				navigator.geolocation.getCurrentPosition( initChalkboard, errorGeolocation );
+				navigator.geolocation.watchPosition( updateChalkboard, errorGeolocation );
+			} else {
+				console.log( "GeoLocation not enabled." );
+			}
+			
+		  	function errorGeolocation( msg ) {
+				// Do a bit of error handling here
+				console.log( "GeoLocation error." );
+			}
+			
+		  	var me_marker;
+			var stores = [];
+			
+			function initChalkboard( position ) {
+				var lat = position.coords.latitude;
+				var lng = position.coords.longitude;	
+				var latLng = new google.maps.LatLng( lat, lng );
+				
+				map.setCenter( latLng );
+
+				me_marker = new google.maps.Marker({
+					map: map,
+					position: latLng
+				});
+			}
+			
+			function updateChalkboard( position ) {
+				var lat = position.coords.latitude;
+				var lng = position.coords.longitude;
+				me_marker.setPosition( new google.maps.LatLng( lat, lng ) );
+				
+				var chalkboard_api_token = 'AP6sWcLms0DkU0gd7zCykmNNkUdb76uP7FPuIGlZ8aXFWlhOp8';
+				var chalkboard_api_uri = 'http://developer.chlkboard.com/promo/api/all/?lat='+ lat + '&lng=' + lng + '&token=' + chalkboard_api_token + '&count=20';
+				
+				$.ajax({
+					cache: false,
+					dataType: 'jsonp',
+					url: chalkboard_api_uri,
+					success: showChalkboard,
+				});
+			}
+			
+			function showChalkboard(data) {
+				if ( data.results != null ) {
+					var promos = data.results;
+					
+					$.each( promos, function( index, store ) {
+						// filter new promotions
+						var arr = $.grep( stores, function( object, index ) {
+							return ( ( store.name == object.name ) && ( store.lat == object.lat ) && ( store.lng == object.lng ) );
+						});
+						if ( arr.length != 0 )
+							return;
+						
+						stores.push( store );
+						
+						(function() {
+							var marker = new google.maps.Marker({
+								map: map,
+								flat: true,
+								animation: google.maps.Animation.DROP,
+								title: store.name,
+								position: new google.maps.LatLng( store.lat, store.lng ),
+								icon: new google.maps.MarkerImage( store.pic, null, null, null, new google.maps.Size( 30, 30 ) ),
+								infowindow: new google.maps.InfoWindow({
+									position: new google.maps.LatLng( store.lat, store.lng ),
+						            content: '<a target="_blank" href="' + store.url + '">' + store.name + '</a><br><small>' + store.address + '<br>Contact: <a href="' + store.contact_number_link + '">' + store.contact_number + '</a>' + '<br>Promotion: ' + store.promo + '</small>'
+						        })
+							});
+							
+							google.maps.event.addListener( marker, 'click', function() {
+								marker.infowindow.open( map, marker );
+		                    });
+						})();
+					});
+				}
+			}
+		});
+		</script>
+	</head>
+	
+	<body id="chalkboard">
+		<div class="map-container">
+  			<div id="map"></div>
+		</div>
+	</body>
+</html>
