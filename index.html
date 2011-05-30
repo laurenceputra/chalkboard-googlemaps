@@ -28,6 +28,7 @@
 		
 		<!-- Chalkboard code sample -->
 		<script>
+                var me_marker;
 		$( document ).ready( function() {
 			// Initialize Google Maps
 		  	var mapOptions = {
@@ -49,7 +50,6 @@
 				console.log( "GeoLocation error." );
 			}
 			
-		  	var me_marker;
 			var stores = [];
 			
 			function initChalkboard( position ) {
